@@ -1,0 +1,23 @@
+exports.plesk_host = {
+    hostname: 'my.host.com',
+    login_data: 'base64-encoded-user-and-pw'
+};
+
+exports.period = 3;
+
+exports.whitelisted_urls = [
+    'site1.com',
+    'site2.com'
+];
+
+exports.sender_mail = {
+    host: 'host.my-mailyerver.com',
+    user: 'smtp-user',
+    pass: 'password'
+};
+
+exports.receiver_mail = {
+    address: 'mail@notification-receiver.com',
+    subject: '!!! site offline alert for domains !!!',
+    message_begin: 'The following websites are offline:'
+};
