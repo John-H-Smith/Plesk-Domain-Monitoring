@@ -40,7 +40,7 @@ setInterval( async () => {
         errorMessage = "";
 
         domains.forEach( domain => {
-            if( domain.hosting_type != "virtual" || domain.name.includes('*') )
+            if( domain.hosting_type != "virtual" || domain.name.includes( '*' ) )
                 return;
 
             requests({
@@ -48,12 +48,13 @@ setInterval( async () => {
             }, (error2, response2, body) => {
 
                 if( error2 ) {
-                    errorUrls.push( { statusCode: -1, domain: domain.name } );
+                    if( !conf.whitelisted_urls.includes( domain.name ) )
+                        errorUrls.push( { statusCode: -1, domain: domain.name } );
                     return;
                 }
 
-                if(response2 != null)
-                    if(response2.statusCode != 200 && !conf.whitelisted_urls.includes(domain.name))
+                if( response2 != null )
+                    if( response2.statusCode != 200 && !conf.whitelisted_urls.includes( domain.name ) )
                         errorUrls.push( { statusCode: response2.statusCode, domain: domain.name } );
             });
         });
