@@ -48,29 +48,32 @@ setInterval( async () => {
                 url: 'https://' + domain.name,
             }, (error2, response2, body) => {
 
-                    if( error2 ) {
-                        let existing = errorUrls.find( url => url.domain === domain.name && url.statusCode === -1  );
+                if( conf.whitelisted_urls.includes( domain.name ) )
+                    return;
+
+                if( error2 ) {
+                    let existing = errorUrls.find( url => url.domain === domain.name && url.statusCode === -1  );
+                    if( existing )
+                        existing.count++;
+                    else
+                        errorUrls.push( { statusCode: -1, domain: domain.name, count: 1 } );
+                    return;
+                }
+
+                if( response2 != null ) {
+                    if( response2.statusCode != 200 ) {
+                        let existing = errorUrls.find( url => url.domain === domain.name && url.statusCode === response2.statusCode  );
                         if( existing )
                             existing.count++;
                         else
-                            errorUrls.push( { statusCode: -1, domain: domain.name, count: 1 } );
-                        return;
+                            errorUrls.push( { statusCode: response2.statusCode, domain: domain.name, count: 1 } );    
+                    }     
+                    if( response2.statusCode == 200 ) {
+                        let existingIndex = errorUrls.findIndex( url => url.domain === domain.name );
+                        if( existingIndex != -1 )
+                            errorUrls.splice(existingIndex, 1);
                     }
-
-                    if(response2 != null) {
-                        if(response2.statusCode != 200 && !conf.whitelisted_urls.includes(domain.name)) {
-                            let existing = errorUrls.find( url => url.domain === domain.name && url.statusCode === response2.statusCode  );
-                            if( existing )
-                                existing.count++;
-                            else
-                                errorUrls.push( { statusCode: response2.statusCode, domain: domain.name, count: 1 } );    
-                        }     
-                        if( response2.statusCode == 200 ) {
-                            let existingIndex = errorUrls.findIndex( url => url.domain === domain.name );
-                            if( existingIndex != -1 )
-                                errorUrls.splice(existingIndex, 1);
-                        }
-                    }                   
+                }                   
 
             });
         });
