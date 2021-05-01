@@ -104,7 +104,7 @@ function sendMail() {
         msg += '<span style="color: red">' + statusCode + '</span> <a href="https://' + error.domain + '">https://' + error.domain + '</a> (' + error.count + ' pings)<br />';
     });
     errorUrls.forEach( error => 
-        fs.appendFile( 'monitoring_log.txt', date + " - " + error.statusCode + " " + error.domain + ' (' + error.count + ' pings)\n', () => {} )
+        fs.appendFile( './monitoring_log.txt', date + " - " + error.statusCode + " " + error.domain + ' (' + error.count + ' pings)\n', () => {} )
     );
 
     var mailOptions = {
