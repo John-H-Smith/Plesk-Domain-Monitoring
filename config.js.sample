@@ -5,6 +5,8 @@ exports.plesk_host = {
 
 exports.period = 3;
 
+exports.checks_to_be_failed = 3;
+
 exports.whitelisted_urls = [
     'site1.com',
     'site2.com'

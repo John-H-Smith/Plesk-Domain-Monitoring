@@ -4,6 +4,7 @@ var nodemailer = require( 'nodemailer' );
 const requests = require( 'request' );
 const fs = require( 'fs' );
 const { date } = require('assert-plus');
+const { config } = require('process');
 
 var transporter = nodemailer.createTransport( {
     host: conf.sender_mail.host,
@@ -47,15 +48,30 @@ setInterval( async () => {
                 url: 'https://' + domain.name,
             }, (error2, response2, body) => {
 
-                if( error2 ) {
-                    if( !conf.whitelisted_urls.includes( domain.name ) )
-                        errorUrls.push( { statusCode: -1, domain: domain.name } );
-                    return;
-                }
+                    if( error2 ) {
+                        let existing = errorUrls.find( url => url.domain === domain.name && url.statusCode === -1  );
+                        if( existing )
+                            existing.count++;
+                        else
+                            errorUrls.push( { statusCode: -1, domain: domain.name, count: 1 } );
+                        return;
+                    }
 
-                if( response2 != null )
-                    if( response2.statusCode != 200 && !conf.whitelisted_urls.includes( domain.name ) )
-                        errorUrls.push( { statusCode: response2.statusCode, domain: domain.name } );
+                    if(response2 != null) {
+                        if(response2.statusCode != 200 && !conf.whitelisted_urls.includes(domain.name)) {
+                            let existing = errorUrls.find( url => url.domain === domain.name && url.statusCode === response2.statusCode  );
+                            if( existing )
+                                existing.count++;
+                            else
+                                errorUrls.push( { statusCode: response2.statusCode, domain: domain.name, count: 1 } );    
+                        }     
+                        if( response2.statusCode == 200 ) {
+                            let existingIndex = errorUrls.findIndex( url => url.domain === domain.name );
+                            if( existingIndex != -1 )
+                                errorUrls.splice(existingIndex, 1);
+                        }
+                    }                   
+
             });
         });
 
@@ -80,12 +96,13 @@ function sendMail() {
 
     let date = (new Date()).getFullYear() + '-' + ((new Date()).getMonth() + 1) + '-' + (new Date()).getDate() + ' ' + (new Date()).getHours() + ':' + (new Date()).getMinutes() + ':' + (new Date()).getSeconds();
 
-    errorUrls.forEach( error => {
+    errorUrls.filter( url => url.count >= conf.checks_to_be_failed ).forEach( error => {
+        let statusCode = error.statusCode;
         if( error.statusCode === -1)
-            error.statusCode = 'Error fetching';
-
-        msg += '<span style="color: red">' + error.statusCode + '</span> <a href="https://' + error.domain + '">https://' + error.domain + '</a><br />';
-        fs.appendFile( 'monitoring_log.txt', date + " - " + error.statusCode + " " + error.domain + '\n', () => {} );
+            statusCode = 'Error fetching';
+        
+        msg += '<span style="color: red">' + statusCode + '</span> <a href="https://' + error.domain + '">https://' + error.domain + '</a> (' + error.count + ' pings)<br />';
+        fs.appendFile( 'monitoring_log.txt', date + " - " + error.statusCode + " " + error.domain + ' (' + error.count + ' pings)\n', () => {} );
     });
 
     var mailOptions = {
@@ -94,9 +111,9 @@ function sendMail() {
         subject: conf.receiver_mail.subject,
         html: msg
     };
-    transporter.sendMail( mailOptions, (error, info) => {
-        if ( error )
-            fs.appendFile( 'error_log.txt', date + " - " + error + '\n', () => {} );
-    });
-    errorUrls = [];
+    if( msg != conf.receiver_mail.message_begin + '<br /><br />' )
+        transporter.sendMail( mailOptions, (error, info) => {
+            if ( error )
+                fs.appendFile( 'error_log.txt', date + " - " + error + '\n', () => {} );
+        });
 }
