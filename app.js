@@ -102,8 +102,10 @@ function sendMail() {
             statusCode = 'Error fetching';
         
         msg += '<span style="color: red">' + statusCode + '</span> <a href="https://' + error.domain + '">https://' + error.domain + '</a> (' + error.count + ' pings)<br />';
-        fs.appendFile( 'monitoring_log.txt', date + " - " + error.statusCode + " " + error.domain + ' (' + error.count + ' pings)\n', () => {} );
     });
+    errorUrls.forEach( error => 
+        fs.appendFile( 'monitoring_log.txt', date + " - " + error.statusCode + " " + error.domain + ' (' + error.count + ' pings)\n', () => {} )
+    );
 
     var mailOptions = {
         from: conf.sender_mail.user,
